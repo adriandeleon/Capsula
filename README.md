@@ -1,13 +1,36 @@
 # Capsula
 
-A terminal UI for managing `~/.ssh/config`.
+A terminal UI for managing `~/.ssh/config`, built on the principle that it is
+*your* file: Capsula edits what you ask it to and gives everything else back
+byte for byte.
 
-Status: **usable**. Browse, add, edit, delete, save, connect and reachability
-checks all work. Key generation and `ssh-copy-id` are not wired up yet.
+Status: **usable**, not yet tagged. Browse, add, edit, delete, save, connect and
+reachability checks all work. Key generation and `ssh-copy-id` are not wired up
+yet — see [Not done yet](#not-done-yet).
 
+## Install
+
+Requires Go 1.26 or newer (declared in `go.mod`), and an `ssh` binary on `PATH`
+(OpenSSH 6.8+, for `ssh -G`).
+
+```sh
+go install github.com/adriandeleon/Capsula/cmd/capsula@latest
 ```
-make build
-./capsula
+
+Or from a checkout:
+
+```sh
+make build   # ./capsula
+make install # into $GOBIN
+```
+
+## Usage
+
+```sh
+capsula                       # ~/.ssh/config
+capsula -config ./some.conf   # a specific file
+capsula -ssh /usr/bin/ssh     # a specific ssh binary
+capsula -version
 ```
 
 | key     | action                                             |
@@ -132,6 +155,21 @@ though ssh connects to it fine, so it is reported as skipped, never as down.
 - If the line scan and the parser disagree about a file's structure, that file
   becomes read-only rather than being spliced against the wrong lines.
 
+## Development
+
+```sh
+make test    # go test ./...
+make race    # the race detector; probe fans out a goroutine per host
+make lint    # gofmt -l . && go vet ./...
+```
+
+There is no TTY in the test suite. `Update` is a pure function of
+`(model, message)`, so the whole interface — including layout at awkward
+terminal sizes — is driven in-process. `internal/ui/pump_test.go` is a
+miniature Bubble Tea runtime for the parts that are message-driven rather than
+synchronous; without it a form silently sits on its first field, which looks
+exactly like an application bug.
+
 ## Layout
 
 ```
@@ -156,3 +194,12 @@ awkward terminal sizes — be tested in-process without a TTY and without spawni
   config, existing ones are edited where they already live.
 - Editing the global defaults block and `Match` blocks.
 - Reordering hosts, which matters because order changes meaning.
+
+The interactive path is also under-verified. Everything is tested by rendering
+frames in-process, so real keypresses reaching the terminal, and `ssh` taking
+over the terminal and handing it back, have not been exercised by a test.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Third-party attributions are in
+[NOTICE](NOTICE); changes are recorded in [CHANGELOG.md](CHANGELOG.md).
