@@ -4,9 +4,11 @@ All notable changes to Capsula are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Nothing has been tagged yet, so everything below sits under Unreleased.
-
 ## [Unreleased]
+
+## [0.1.0] - 2026-08-13
+
+First release.
 
 ### Added
 
@@ -55,4 +57,5 @@ Nothing has been tagged yet, so everything below sits under Unreleased.
 - Values containing newlines are rejected: one would splice arbitrary directives
   into the config, and values are routinely pasted from elsewhere.
 
-[Unreleased]: https://github.com/adriandeleon/Capsula/commits/master
+[Unreleased]: https://github.com/adriandeleon/Capsula/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/adriandeleon/Capsula/releases/tag/v0.1.0
