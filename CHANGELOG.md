@@ -27,6 +27,14 @@ Nothing has been tagged yet, so everything below sits under Unreleased.
 - `Include` support: hosts are listed across every included file and edited in
   the file they actually live in.
 
+### Infrastructure
+
+- CI on every push and pull request: `gofmt`, `go vet` and `go test -race` on
+  Linux and macOS. Windows is deliberately out of scope — the permission checks
+  assert Unix mode bits, which Windows does not model meaningfully.
+- Releases build on a `v*` tag: `.tar.gz` archives, `.deb` and `.rpm` packages
+  for amd64 and arm64, a Homebrew cask, and `checksums.txt`.
+
 ### Notes on behaviour
 
 - **Files are never reformatted.** Writing splices the bytes that were loaded,

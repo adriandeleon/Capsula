@@ -1,0 +1,148 @@
+version: 2
+
+project_name: capsula
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: capsula
+    main: ./cmd/capsula
+    binary: capsula
+    env:
+      # Nothing in the dependency tree needs cgo, and a static binary keeps the
+      # .deb and .rpm free of libc version constraints.
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      # main.version is the variable cmd/capsula/main.go prints for -version.
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: capsula
+    ids: [capsula]
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - CHANGELOG.md
+      - LICENSE
+      - NOTICE
+
+nfpms:
+  - id: capsula
+    ids: [capsula]
+    package_name: capsula
+    formats: [deb, rpm]
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: Adrian De Leon
+    homepage: https://github.com/adriandeleon/Capsula
+    maintainer: Adrian De Leon <adrian.deleon@gmail.com>
+    description: |-
+      Terminal UI for managing ~/.ssh/config.
+      Browse, add, edit and delete hosts, connect over ssh, and check
+      reachability, without reformatting a hand-edited configuration file.
+    license: MIT
+    section: utils
+    bindir: /usr/bin
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/capsula/LICENSE
+      - src: NOTICE
+        dst: /usr/share/doc/capsula/NOTICE
+      - src: README.md
+        dst: /usr/share/doc/capsula/README.md
+      - src: CHANGELOG.md
+        dst: /usr/share/doc/capsula/CHANGELOG.md
+    overrides:
+      # The OpenSSH client package is named differently on each side, and
+      # Capsula genuinely needs it: it shells out to ssh both to resolve
+      # effective configuration and to connect.
+      deb:
+        recommends:
+          - openssh-client
+      rpm:
+        recommends:
+          - openssh-clients
+
+# Homebrew ships this as a cask rather than a formula: goreleaser deprecated
+# "brews" in favour of casks for pre-built binaries, and a cask can strip the
+# quarantine attribute, which matters because these binaries are unsigned.
+homebrew_casks:
+  - name: capsula
+    ids: [capsula]
+    binaries: [capsula]
+    repository:
+      owner: adriandeleon
+      name: homebrew-tap
+      branch: main
+      # A PAT is required: the workflow's default GITHUB_TOKEN is scoped to
+      # this repository and cannot push to the tap.
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    # Without a token the cask is generated but not pushed, so a release still
+    # produces every other artifact instead of failing outright.
+    skip_upload: '{{ if .Env.HOMEBREW_TAP_GITHUB_TOKEN }}false{{ else }}true{{ end }}'
+    directory: Casks
+    homepage: https://github.com/adriandeleon/Capsula
+    description: Terminal UI for managing ~/.ssh/config
+    license: MIT
+    commit_author:
+      name: Adrian De Leon
+      email: adrian.deleon@gmail.com
+    hooks:
+      post:
+        # The binaries are not signed with a Developer ID or notarized, so
+        # Gatekeeper would otherwise refuse to run them once the download has
+        # been marked as quarantined.
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/capsula"]
+          end
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+
+release:
+  github:
+    owner: adriandeleon
+    name: Capsula
+  draft: false
+  # A tag such as v0.1.0-rc1 is published as a pre-release automatically.
+  prerelease: auto
+  footer: |
+    ---
+
+    **macOS**
+
+    ```sh
+    brew install adriandeleon/tap/capsula
+    ```
+
+    **Debian / Ubuntu**
+
+    ```sh
+    sudo dpkg -i capsula_{{ .Version }}_linux_amd64.deb   # or _arm64
+    ```
+
+    **Fedora / RHEL**
+
+    ```sh
+    sudo rpm -i capsula_{{ .Version }}_linux_amd64.rpm    # or _arm64
+    ```
+
+    Binaries are unsigned and un-notarized.

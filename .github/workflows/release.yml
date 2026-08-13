@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the release and upload artifacts
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # GoReleaser derives the version and changelog from git history, so a
+          # shallow clone gives it a wrong version and an empty changelog.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # A tag can be pushed from a commit that never went through CI, so the
+      # suite runs once more before anything is published.
+      - name: Verify
+        run: |
+          go vet ./...
+          go test ./...
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional. The default GITHUB_TOKEN cannot push to another
+          # repository, so pushing the Homebrew cask to adriandeleon/homebrew-tap
+          # needs a PAT with contents:write on that repo. When the secret is
+          # absent this is the empty string and .goreleaser.yaml skips only the
+          # tap upload, leaving the rest of the release intact.
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

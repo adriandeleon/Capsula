@@ -10,19 +10,38 @@ yet — see [Not done yet](#not-done-yet).
 
 ## Install
 
-Requires Go 1.26 or newer (declared in `go.mod`), and an `ssh` binary on `PATH`
-(OpenSSH 6.8+, for `ssh -G`).
+Capsula needs an `ssh` binary on `PATH` (OpenSSH 6.8 or newer, for `ssh -G`).
+
+**macOS** — Intel and Apple Silicon:
+
+```sh
+brew install adriandeleon/tap/capsula
+```
+
+**Debian / Ubuntu** — download the `.deb` for your architecture from the
+[latest release](https://github.com/adriandeleon/Capsula/releases/latest):
+
+```sh
+sudo dpkg -i capsula_<version>_linux_amd64.deb   # or _arm64
+```
+
+**Fedora / RHEL**:
+
+```sh
+sudo rpm -i capsula_<version>_linux_amd64.rpm    # or _arm64
+```
+
+**From source** — requires Go 1.26 or newer (declared in `go.mod`):
 
 ```sh
 go install github.com/adriandeleon/Capsula/cmd/capsula@latest
 ```
 
-Or from a checkout:
+Or from a checkout, `make build` for `./capsula`, or `make install` into
+`$GOBIN`.
 
-```sh
-make build   # ./capsula
-make install # into $GOBIN
-```
+Binaries are unsigned and un-notarized. The Homebrew cask strips the macOS
+quarantine attribute on install so Gatekeeper does not block them.
 
 ## Usage
 

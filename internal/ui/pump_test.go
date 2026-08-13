@@ -20,6 +20,14 @@ import (
 // Commands that do not return promptly are dropped. Those are timers, chiefly
 // the cursor blink, and waiting on them would make the tests take seconds each
 // while proving nothing.
+// cmdTimeout separates a command from a timer.
+//
+// Every command this application issues returns effectively instantly, while
+// the cursor blink in bubbles ticks at 530ms. The threshold sits well between
+// the two: generous enough that a loaded CI runner cannot make a real command
+// look like a timer, and short enough that blink is never waited on.
+const cmdTimeout = 100 * time.Millisecond
+
 func pump(t *testing.T, m Model, cmd tea.Cmd) Model {
 	t.Helper()
 	queue := []tea.Cmd{cmd}
@@ -35,7 +43,7 @@ func pump(t *testing.T, m Model, cmd tea.Cmd) Model {
 		var msg tea.Msg
 		select {
 		case msg = <-ch:
-		case <-time.After(30 * time.Millisecond):
+		case <-time.After(cmdTimeout):
 			continue // a timer; nothing here depends on it
 		}
 		if msg == nil {
